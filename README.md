@@ -51,4 +51,4 @@ NotAfter       string
 
 
 #### Notes
-_Upstream changes upstream can and will break functionality of this package. Please use at your own risk._
+_Upstream changes can and will break functionality of this package. Please use at your own risk._
