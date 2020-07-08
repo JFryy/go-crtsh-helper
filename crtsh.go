@@ -9,7 +9,7 @@ import (
 	"reflect"
 )
 
-// Struct matching json response of getcert api.
+// Cert struct matching json response of crt.sh api.
 type Cert struct {
 	IssuerCaID     int    `json:"issuer_ca_id"`
 	IssuerName     string `json:"issuer_name"`
@@ -20,8 +20,8 @@ type Cert struct {
 	NotAfter       string `json:"not_after"`
 }
 
-// Get certificate response from crt.sh and returns marshal struct
-func GetCerts(url string) []Cert {
+// Get certificate response from crt.sh and returns marshalled json as list of structs.
+func getResponse(url string) []Cert {
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
@@ -33,10 +33,10 @@ func GetCerts(url string) []Cert {
 	return certs
 }
 
-// Query by domain name, organization name or certificate fingerprint.
-// Input parameter has hand
-func query(query interface{}) []Cert {
-	base_url := "https://crt.sh/"
+// GetCerts by domain name, organization name or certificate fingerprint.
+// Input parameter as 'string' for single query, input as slice for joining multiple queries/responses.
+func GetCerts(query interface{}) []Cert {
+	baseURL := "https://crt.sh/"
 	output := "json"
 	var certs []Cert
 	var allcerts [][]Cert
@@ -45,14 +45,14 @@ func query(query interface{}) []Cert {
 	case []string:
 		s := reflect.ValueOf(query)
 		for i := 0; i < s.Len(); i++ {
-			url := fmt.Sprintf("%s?q=%s&output=%s", base_url, s.Index(i), output)
-			certs = GetCerts(url)
+			url := fmt.Sprintf("%s?q=%s&output=%s", baseURL, s.Index(i), output)
+			certs = getResponse(url)
 			allcerts = append(allcerts, certs)
 		}
 
 	case string:
-		url := fmt.Sprintf("%s?q=%s&output=%s", base_url, query, output)
-		certs = GetCerts(url)
+		url := fmt.Sprintf("%s?q=%s&output=%s", baseURL, query, output)
+		certs = getResponse(url)
 
 	default:
 		log.Fatal("Unaccepted argument for query.")
@@ -62,12 +62,11 @@ func query(query interface{}) []Cert {
 		return certs
 	}
 
-	var merged_certs []Cert
+	var mergedCerts []Cert
 	for host := range allcerts {
 		for certs := range allcerts[host] {
-			merged_certs = append(merged_certs, allcerts[host][certs])
+			mergedCerts = append(mergedCerts, allcerts[host][certs])
 		}
-
 	}
-	return merged_certs
+	return mergedCerts
 }
