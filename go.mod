@@ -1,3 +1,3 @@
-module github.com/brennan-macaig/go-crtsh-api
+module github.com/JFryy/go-crtsh-api
 
 go 1.14
