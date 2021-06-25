@@ -16,7 +16,7 @@ import (
 )
 ```
 
-Use the GetCerts method for a single organization/domain
+Use the GetCerts method for a single organization/domain or multiple domains
 ```go
 func main() {
 	// Print Issuer and NameValue certificates for a domain and subdomains
@@ -26,8 +26,7 @@ func main() {
 	}
 }
 ```
-
-Or use the GetCerts method for multiple organizations/domains
+multiple:
 ```go
 func main() {
     domains := []string{"google.com", "reddit.com"}
