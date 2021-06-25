@@ -4,7 +4,7 @@ which is a web interface (Run by Comodo) for the distributed database known as t
 Please see ['What is Certificate Transparency?'](certificate-transparency.org/what-is-ct) for more information.
 
 ### Installation
-`go get -u github.com/JFryy/go-crtsh-api`
+`go get -u github.com/JFryy/go-crtsh-helper`
 
 ### Usage
 
