@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"reflect"
 )
@@ -18,27 +17,33 @@ type Cert struct {
 	EntryTimestamp string `json:"entry_timestamp"`
 	NotBefore      string `json:"not_before"`
 	NotAfter       string `json:"not_after"`
+	SerialNumber   string `json:"serial_number"`
 }
 
 // Get certificate response from crt.sh and returns marshalled json as list of structs.
-func getResponse(url string) []Cert {
+func getResponse(url string) ([]Cert, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("could not make request to crt.sh - %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // no error checking, as if this refuses the program is just dead
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("could not read body of response - %w", err)
+	}
 	var certs []Cert
-	json.Unmarshal(body, &certs)
-	return certs
+	err = json.Unmarshal(body, &certs)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal response - %w", err)
+	}
+	return certs, nil
 }
 
 // GetCerts by domain name, organization name or certificate fingerprint.
 // Input parameter as 'string' for single query, input as slice for joining multiple queries/responses.
-func GetCerts(query interface{}) []Cert {
+func GetCerts(query interface{}) ([]Cert, error) {
 	baseURL := "https://crt.sh/"
 	output := "json"
-	var certs []Cert
 	var allcerts [][]Cert
 
 	switch query.(type) {
@@ -46,21 +51,26 @@ func GetCerts(query interface{}) []Cert {
 		s := reflect.ValueOf(query)
 		for i := 0; i < s.Len(); i++ {
 			url := fmt.Sprintf("%s?q=%s&output=%s", baseURL, s.Index(i), output)
-			certs = getResponse(url)
+			certs, err := getResponse(url)
+			if err != nil {
+				return nil, fmt.Errorf("could not get certs - %w", err)
+			}
 			allcerts = append(allcerts, certs)
 		}
 
 	case string:
 		url := fmt.Sprintf("%s?q=%s&output=%s", baseURL, query, output)
-		certs = getResponse(url)
+		certs, err := getResponse(url)
+		if err != nil {
+			return nil, fmt.Errorf("could not get certs - %w", err)
+		}
+		return certs, nil
+
 
 	default:
-		log.Fatal("Unaccepted argument for query.")
+		return nil, fmt.Errorf("unaccepted argument for query")
 	}
 
-	if len(allcerts) == 0 {
-		return certs
-	}
 
 	var mergedCerts []Cert
 	for host := range allcerts {
@@ -68,5 +78,5 @@ func GetCerts(query interface{}) []Cert {
 			mergedCerts = append(mergedCerts, allcerts[host][certs])
 		}
 	}
-	return mergedCerts
+	return mergedCerts, nil
 }
